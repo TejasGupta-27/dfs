@@ -1,11 +1,12 @@
-package internal
+package replication
 
 import (
 	"fmt"
 	"math/rand"
 	"sync"
-	"github.com/TejasGupta-27/dfs/config"
-	
+
+	"dfs/config"
+	"dfs/internal/peer"
 )
 
 type ReplicationManager struct {
@@ -21,20 +22,20 @@ func NewReplicationManager(cfg *config.Config) *ReplicationManager {
 	}
 }
 
-func (rm *ReplicationManager) ReplicateChunk(chunk Chunk, peers map[string]*Peer) error {
+func (rm *ReplicationManager) ReplicateChunk(chunk []byte, chunkID string, peers map[string]*peer.Peer) error {
 	targetPeers := rm.selectPeers(peers, rm.cfg.ReplicationFactor)
 
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(targetPeers))
 
-	for _, peer := range targetPeers {
+	for _, p := range targetPeers {
 		wg.Add(1)
-		go func(p *Peer) {
+		go func(p *peer.Peer) {
 			defer wg.Done()
-			if err := p.SendChunk(chunk); err != nil {
+			if err := p.SendChunk(chunk, chunkID); err != nil {
 				errChan <- fmt.Errorf("failed to send chunk to peer %s: %v", p.ID(), err)
 			}
-		}(peer)
+		}(p)
 	}
 
 	wg.Wait()
@@ -47,7 +48,7 @@ func (rm *ReplicationManager) ReplicateChunk(chunk Chunk, peers map[string]*Peer
 	}
 
 	rm.mu.Lock()
-	rm.chunkLocation[chunk.ID] = append(rm.chunkLocation[chunk.ID], rm.getPeerIDs(targetPeers)...)
+	rm.chunkLocation[chunkID] = append(rm.chunkLocation[chunkID], rm.getPeerIDs(targetPeers)...)
 	rm.mu.Unlock()
 
 	return nil
@@ -59,10 +60,10 @@ func (rm *ReplicationManager) GetChunkLocations(chunkID string) []string {
 	return rm.chunkLocation[chunkID]
 }
 
-func (rm *ReplicationManager) selectPeers(peers map[string]*Peer, count int) []*Peer {
-	peerList := make([]*Peer, 0, len(peers))
-	for _, peer := range peers {
-		peerList = append(peerList, peer)
+func (rm *ReplicationManager) selectPeers(peers map[string]*peer.Peer, count int) []*peer.Peer {
+	peerList := make([]*peer.Peer, 0, len(peers))
+	for _, p := range peers {
+		peerList = append(peerList, p)
 	}
 
 	rand.Shuffle(len(peerList), func(i, j int) {
@@ -76,10 +77,10 @@ func (rm *ReplicationManager) selectPeers(peers map[string]*Peer, count int) []*
 	return peerList[:count]
 }
 
-func (rm *ReplicationManager) getPeerIDs(peers []*Peer) []string {
+func (rm *ReplicationManager) getPeerIDs(peers []*peer.Peer) []string {
 	ids := make([]string, len(peers))
-	for i, peer := range peers {
-		ids[i] = peer.ID()
+	for i, p := range peers {
+		ids[i] = p.ID()
 	}
 	return ids
 }

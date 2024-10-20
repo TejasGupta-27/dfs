@@ -1,0 +1,7 @@
+{
+    "port": 8080,
+    "chunk_size": 1048576,
+    "replication_factor": 3,
+    "storage_path": "./storage",
+    "encryption_key": "your-32-byte-encryption-key-here"
+  }

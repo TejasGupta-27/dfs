@@ -1,20 +1,19 @@
 package node
 
 import (
-	"github.com/TejasGupta-27/dfs/config"
-	"github.com/TejasGupta-27/dfs/internal/network"
-	"github.com/TejasGupta-27/dfs/internal/file"
-	"github.com/TejasGupta-27/dfs/internal/replication"
-	"github.com/TejasGupta-27/dfs/internal/security"
-	"github.com/TejasGupta-27/dfs/internal/peer"
+	"dfs/config"
+	"dfs/internal/network"
+	"dfs/internal/file"
+	"dfs/internal/replication"
+	"dfs/internal/security"
 )
 
 type Node struct {
-	config     *config.Config
-	network    *network.Network
-	fileSystem *file.FileSystem
+	config      *config.Config
+	network     *network.Network
+	fileSystem  *file.FileSystem
 	replication *replication.ReplicationManager
-	security   *security.Security
+	security    *security.Security
 }
 
 func NewNode(cfg *config.Config) (*Node, error) {
@@ -29,11 +28,11 @@ func NewNode(cfg *config.Config) (*Node, error) {
 	}
 
 	return &Node{
-		config:     cfg,
-		network:    net,
-		fileSystem: file.NewFileSystem(cfg),
+		config:      cfg,
+		network:     net,
+		fileSystem:  file.NewFileSystem(cfg),
 		replication: replication.NewReplicationManager(cfg),
-		security:   sec,
+		security:    sec,
 	}, nil
 }
 

@@ -1,15 +1,18 @@
-package internal
+package file
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/TejasGupta-27/dfs/config"
+	"dfs/config"
 )
+
+type FileSystem struct {
+	cfg *config.Config
+}
 
 type File struct {
 	Name   string
@@ -22,7 +25,11 @@ type Chunk struct {
 	Data []byte
 }
 
-func SplitFile(filePath string, cfg *config.Config) (*File, error) {
+func NewFileSystem(cfg *config.Config) *FileSystem {
+	return &FileSystem{cfg: cfg}
+}
+
+func (fs *FileSystem) SplitFile(filePath string) (*File, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -34,16 +41,12 @@ func SplitFile(filePath string, cfg *config.Config) (*File, error) {
 		return nil, err
 	}
 
-	fileName := filepath.Base(filePath)
-	fileSize := fileInfo.Size()
-	chunkSize := cfg.ChunkSize
-
 	splitFile := &File{
-		Name: fileName,
-		Size: fileSize,
+		Name: filepath.Base(filePath),
+		Size: fileInfo.Size(),
 	}
 
-	buffer := make([]byte, chunkSize)
+	buffer := make([]byte, fs.cfg.ChunkSize)
 	for {
 		bytesRead, err := file.Read(buffer)
 		if err != nil {
@@ -63,7 +66,7 @@ func SplitFile(filePath string, cfg *config.Config) (*File, error) {
 	return splitFile, nil
 }
 
-func ReassembleFile(file *File, outputPath string) error {
+func (fs *FileSystem) ReassembleFile(file *File, outputPath string) error {
 	outFile, err := os.Create(outputPath)
 	if err != nil {
 		return err

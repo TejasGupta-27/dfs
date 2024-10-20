@@ -1,4 +1,4 @@
-package internal
+package peer
 
 import (
 	"encoding/json"
@@ -41,8 +41,13 @@ func (p *Peer) Close() {
 	close(p.sendChan)
 }
 
-func (p *Peer) SendChunk(chunk Chunk) error {
-	data, err := json.Marshal(chunk)
+func (p *Peer) SendChunk(chunk []byte, chunkID string) error {
+	msg := map[string]interface{}{
+		"type":    "chunk",
+		"chunkID": chunkID,
+		"data":    chunk,
+	}
+	data, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
@@ -53,14 +58,14 @@ func (p *Peer) SendChunk(chunk Chunk) error {
 func (p *Peer) readLoop() {
 	defer p.Close()
 	for {
-		var chunk Chunk
+		var msg map[string]interface{}
 		decoder := json.NewDecoder(p.conn)
-		if err := decoder.Decode(&chunk); err != nil {
+		if err := decoder.Decode(&msg); err != nil {
 			fmt.Printf("Error reading from peer %s: %v\n", p.id, err)
 			return
 		}
-		// Process received chunk
-		fmt.Printf("Received chunk %s from peer %s\n", chunk.ID, p.id)
+		// Process received message
+		fmt.Printf("Received message from peer %s: %v\n", p.id, msg)
 	}
 }
 

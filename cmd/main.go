@@ -1,18 +1,25 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/TejasGupta-27/dfs/internal/node"
-	"github.com/TejasGupta-27/dfs/config"
+	"dfs/config"
+	"dfs/internal/node"
 )
 
 func main() {
-	cfg := config.LoadConfig()
+	configPath := flag.String("config", "config.json", "Path to config file")
+	flag.Parse()
+
+	cfg, err := config.LoadConfig(*configPath)
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
 
 	node, err := node.NewNode(cfg)
 	if err != nil {
